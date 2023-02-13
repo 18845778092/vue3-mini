@@ -22,6 +22,7 @@ function createSetter() {
     rececier: object
   ) {
     const result = Reflect.set(target, key as PropertyKey, value, rececier)
+    console.log('value',value)
     trigger(target, key, value)
     return result
   }

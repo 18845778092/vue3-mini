@@ -8,7 +8,10 @@
     <script src="../../dist/vue.js"></script>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div id="p1"></div>
+      <div id="p2"></div>
+    </div>
     <script>
       const { reactive,effect } = Vue
       const proxy = reactive({
@@ -16,8 +19,14 @@
       })
       console.log(proxy)
       effect(()=>{
-        document.querySelector('#app').innerText=proxy.name
+        document.querySelector('#p1').innerText=proxy.name
       })
+      effect(()=>{
+        document.querySelector('#p2').innerText=proxy.name
+      })
+      setTimeout(()=>{
+        proxy.name='喝喝'
+      },2000)
     </script>
   </body>
 </html>

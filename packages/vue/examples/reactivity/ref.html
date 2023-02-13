@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="../../dist/vue.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div id="p1"></div>
+    <div id="p2"></div>
+  </div>
+  <script>
+    const { ref,effect } = Vue
+    const proxy = ref({
+      name: 'xiaoli'
+    })
+    console.log(proxy)
+    effect(()=>{
+      document.querySelector('#p1').innerText=proxy.value.name
+    })
+    effect(()=>{
+      document.querySelector('#p2').innerText=proxy.value.name
+    })
+    setTimeout(()=>{
+      // 依次触发 ref的get和reactive的setter 
+      proxy.value.name='喝喝'
+    },2000)
+    </script>
+</body>
+</html>

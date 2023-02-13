@@ -1,5 +1,10 @@
-type KeyToDepMap = Map<any, ReactiveEffect>
+import { isArray } from '@vue/shared'
+import { ComputedRefImpl } from './computed'
+import { createDep, Dep } from './dep'
+
+type KeyToDepMap = Map<any, Dep>
 const targetMap = new WeakMap<object, KeyToDepMap>()
+export type EffectScheduler = (...args) => any
 
 export let activeEffect: ReactiveEffect | null
 
@@ -11,19 +16,41 @@ export function track(target: object, key: unknown) {
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()))
   }
-
-  depsMap.set(key, activeEffect)
-  console.log(targetMap)
+  let dep = depsMap.get(key)
+  if (!dep) {
+    depsMap.set(key, (dep = createDep()))
+  }
+  trackEffects(dep)
 }
 
-export function trigger(target: object, key: unknown, vlaue: unknown) {
+export function trigger(target: object, key: unknown, value: unknown) {
   const depsMap = targetMap.get(target)
   if (!depsMap) return //没收集过
 
-  const effect = depsMap.get(key) as ReactiveEffect //暂时一个
-  if (!effect) return
+  const dep: Dep | undefined = depsMap.get(key)
+  if (!dep) return
 
-  effect.fn()
+  triggerEffects(dep)
+}
+
+export function triggerEffects(dep: Dep) {
+  const effects = isArray(dep) ? dep : [...dep]
+  for (const effect of effects) {
+    triggerEffect(effect)
+  }
+}
+
+export function triggerEffect(effect: ReactiveEffect) {
+  if (effect.scheduler) {
+    effect.scheduler()
+  } else {
+    effect.run()
+  }
+}
+
+export function trackEffects(dep: Dep) {
+  dep.add(activeEffect!)
+  // TODO
 }
 
 export function effect<T = any>(fn: () => T) {
@@ -31,10 +58,12 @@ export function effect<T = any>(fn: () => T) {
   _effect.run() //完成第一次执行
 }
 
-class ReactiveEffect<T = any> {
-  constructor(public fn: () => T) {}
+export class ReactiveEffect<T = any> {
+  computed?: ComputedRefImpl<T>
+
+  constructor(public fn: () => T, public scheduler: EffectScheduler | null = null) {}
   run() {
     activeEffect = this
-    this.fn()
+    return this.fn()
   }
 }
