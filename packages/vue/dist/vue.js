@@ -11,6 +11,8 @@ var Vue = (function (exports) {
     var isFunction = function (val) {
         return typeof val === 'function';
     };
+    var extend = Object.assign;
+    var EMPTY_OBJ = {};
 
     /******************************************************************************
     Copyright (c) Microsoft Corporation.
@@ -73,6 +75,30 @@ var Vue = (function (exports) {
 
     var targetMap = new WeakMap();
     var activeEffect;
+    var ReactiveEffect = /** @class */ (function () {
+        function ReactiveEffect(fn, scheduler) {
+            if (scheduler === void 0) { scheduler = null; }
+            this.fn = fn;
+            this.scheduler = scheduler;
+        }
+        ReactiveEffect.prototype.run = function () {
+            activeEffect = this;
+            return this.fn();
+        };
+        ReactiveEffect.prototype.stop = function () {
+            console.log('stop');
+        };
+        return ReactiveEffect;
+    }());
+    function effect(fn, options) {
+        var _effect = new ReactiveEffect(fn);
+        if (options) {
+            extend(_effect, options); //合并调度器
+        }
+        if (!options || !options.lazy) {
+            _effect.run(); //完成第一次执行
+        }
+    }
     function track(target, key) {
         console.log('收集依赖');
         if (!activeEffect)
@@ -97,12 +123,17 @@ var Vue = (function (exports) {
         triggerEffects(dep);
     }
     function triggerEffects(dep) {
-        var e_1, _a;
+        var e_1, _a, e_2, _b;
         var effects = isArray(dep) ? dep : __spreadArray([], __read(dep), false);
         try {
+            // for (const effect of effects) {
+            //   triggerEffect(effect)
+            // }
             for (var effects_1 = __values(effects), effects_1_1 = effects_1.next(); !effects_1_1.done; effects_1_1 = effects_1.next()) {
                 var effect_1 = effects_1_1.value;
-                triggerEffect(effect_1);
+                if (effect_1.computed) {
+                    triggerEffect(effect_1);
+                }
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
@@ -111,6 +142,21 @@ var Vue = (function (exports) {
                 if (effects_1_1 && !effects_1_1.done && (_a = effects_1.return)) _a.call(effects_1);
             }
             finally { if (e_1) throw e_1.error; }
+        }
+        try {
+            for (var effects_2 = __values(effects), effects_2_1 = effects_2.next(); !effects_2_1.done; effects_2_1 = effects_2.next()) {
+                var effect_2 = effects_2_1.value;
+                if (!effect_2.computed) {
+                    triggerEffect(effect_2);
+                }
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (effects_2_1 && !effects_2_1.done && (_b = effects_2.return)) _b.call(effects_2);
+            }
+            finally { if (e_2) throw e_2.error; }
         }
     }
     function triggerEffect(effect) {
@@ -125,22 +171,6 @@ var Vue = (function (exports) {
         dep.add(activeEffect);
         // TODO
     }
-    function effect(fn) {
-        var _effect = new ReactiveEffect(fn);
-        _effect.run(); //完成第一次执行
-    }
-    var ReactiveEffect = /** @class */ (function () {
-        function ReactiveEffect(fn, scheduler) {
-            if (scheduler === void 0) { scheduler = null; }
-            this.fn = fn;
-            this.scheduler = scheduler;
-        }
-        ReactiveEffect.prototype.run = function () {
-            activeEffect = this;
-            return this.fn();
-        };
-        return ReactiveEffect;
-    }());
 
     var get = createGetter();
     var set = createSetter();
@@ -158,7 +188,6 @@ var Vue = (function (exports) {
     function createSetter() {
         return function set(target, key, value, rececier) {
             var result = Reflect.set(target, key, value, rececier);
-            console.log('value', value);
             trigger(target, key);
             return result;
         };
@@ -174,12 +203,16 @@ var Vue = (function (exports) {
             return existingProxy;
         }
         var proxy = new Proxy(target, baseHandlers);
+        proxy["__v_isReactive" /* ReactiveFlags.IS_REACTIVE */] = true;
         proxyMap.set(target, proxy);
         return proxy;
     }
     var toReactive = function (value) {
         return isObject(value) ? reactive(value) : value;
     };
+    function isReactive(value) {
+        return !!(value && value["__v_isReactive" /* ReactiveFlags.IS_REACTIVE */]);
+    }
 
     function ref(value) {
         return createRef(value, false);
@@ -268,10 +301,105 @@ var Vue = (function (exports) {
         return cRef;
     }
 
+    var isFlushPending = false;
+    var resolvedPromise = Promise.resolve();
+    var pendingPreFlushCbs = [];
+    function queuePreFlushCb(cb) {
+        queueCb(cb);
+    }
+    function queueCb(cb, pendingQueue) {
+        pendingPreFlushCbs.push(cb);
+        queueFlush(); //依次执行队列函数
+    }
+    // 依次执行队列函数
+    function queueFlush() {
+        if (!isFlushPending) {
+            isFlushPending = true;
+            // 第一个push到队列中的任务就会执行队列异步处理函数
+            // 异步队列处理函数执行之前同步代码会执行完
+            // 每处理一次异步队列时isFlushPending置为false
+            resolvedPromise.then(flushJobs);
+        }
+    }
+    // 真正处理队列的函数
+    function flushJobs() {
+        isFlushPending = false; //队列开始处理
+        flushPreFlushCbs();
+    }
+    // 循环进行队列处理
+    function flushPreFlushCbs() {
+        if (pendingPreFlushCbs.length) {
+            var activePreFlushCbs = __spreadArray([], __read(new Set(pendingPreFlushCbs)), false);
+            pendingPreFlushCbs.length = 0;
+            for (var i = 0; i < activePreFlushCbs.length; i++) {
+                activePreFlushCbs[i]();
+            }
+        }
+    }
+
+    function watch(source, cb, options) {
+        return doWatch(source, cb, options);
+    }
+    function doWatch(source, cb, _a) {
+        var _b = _a === void 0 ? EMPTY_OBJ : _a, immediate = _b.immediate, deep = _b.deep;
+        var getter;
+        if (isReactive(source)) {
+            getter = function () { return source; };
+            deep = true;
+        }
+        else {
+            getter = function () { };
+        }
+        // 依赖收集
+        if (cb && deep) {
+            // TODO
+            var baseGetter_1 = getter; //浅拷贝
+            getter = function () { return traverse(baseGetter_1()); };
+        }
+        var oldValue = {};
+        // 拿到newValue
+        var job = function () {
+            if (cb) {
+                var newValue = effect.run();
+                if (deep || hasChanged(newValue, oldValue)) {
+                    cb(newValue, oldValue);
+                    oldValue = newValue;
+                }
+            }
+        };
+        var scheduler = function () { return queuePreFlushCb(job); };
+        var effect = new ReactiveEffect(getter, scheduler);
+        if (cb) {
+            if (immediate) {
+                job();
+            }
+            else {
+                oldValue = effect.run();
+            }
+        }
+        else {
+            effect.run();
+        }
+        return function () {
+            effect.stop();
+        };
+    }
+    function traverse(value) {
+        if (!isObject(value)) {
+            return value;
+        }
+        for (var key in value) {
+            traverse(value[key]);
+        }
+        return value;
+    }
+
     exports.computed = computed;
     exports.effect = effect;
+    exports.queuePreFlushCb = queuePreFlushCb;
     exports.reactive = reactive;
     exports.ref = ref;
+    exports.watch = watch;
 
     return exports;
 

@@ -13,21 +13,23 @@
       <div id="p2"></div>
     </div>
     <script>
-      const { computed, effect,reactive } = Vue
-      const obj=reactive({
-        name:'小李'
+      const { watch, effect, reactive } = Vue
+      const obj = reactive({
+        name: '小李'
       })
-      const computedObj = computed(()=>{
-        console.log('计算')
-        return '姓名' + obj.name
-      })
-      // effect(() => {
-      //   document.querySelector('#p1').innerText = computedObj.value
-      // })
-      effect(() => {
-        document.querySelector('#p2').innerText = computedObj.value
-        document.querySelector('#p2').innerText = computedObj.value
-      })
+
+      watch(
+        obj,
+        (newVal, oldval) => {
+          console.log('watch触发！')
+          console.log(newVal)
+          // console.log(oldval)
+        },
+        {
+          immediate: true
+        }
+      )
+
       setTimeout(() => {
         obj.name = '喝喝'
       }, 2000)
