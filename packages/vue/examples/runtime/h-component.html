@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      const { h } = Vue
+      const component = {
+        render() {
+          const vnode1 = h('div', '这是一个component')
+          // console.log('1',vnode1)
+          return vnode1
+          // return {
+          //   __v_isVNode: true,
+          //   type: 'div',
+          //   children: '这是一个component',
+          //   shapeFlag: 9
+          // }
+        }
+      }
+
+      // const vnode2 = {
+      //   __v_isVNode: true,
+      //   type: component,
+      //   shapeFlag: 4
+      // }
+      const vnode2 = h(component)
+      console.log('2', vnode2)
+
+      // render(vnode2, document.querySelector('#app'))
+    </script>
+  </body>
+</html>

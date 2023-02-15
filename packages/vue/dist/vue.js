@@ -1,6 +1,29 @@
 var Vue = (function (exports) {
     'use strict';
 
+    function normalizeClass(value) {
+        var res = '';
+        if (isString(value)) {
+            res = value;
+        }
+        else if (isArray(value)) {
+            for (var i = 0; i < value.length; i++) {
+                var normalized = normalizeClass(value[i]);
+                if (normalized) {
+                    res += normalized + ' ';
+                }
+            }
+        }
+        else if (isObject(value)) {
+            for (var name_1 in value) {
+                if (value[name_1]) {
+                    res += name_1 + ' ';
+                }
+            }
+        }
+        return res.trim();
+    }
+
     var isArray = Array.isArray;
     var isObject = function (val) {
         return val !== null && typeof val === 'object';
@@ -11,6 +34,7 @@ var Vue = (function (exports) {
     var isFunction = function (val) {
         return typeof val === 'function';
     };
+    var isString = function (val) { return typeof val === 'string'; };
     var extend = Object.assign;
     var EMPTY_OBJ = {};
 
@@ -394,8 +418,94 @@ var Vue = (function (exports) {
         return value;
     }
 
+    var Fragment = Symbol('Fragment');
+    var Text = Symbol('Text');
+    var Comment = Symbol('Comment');
+    function createVNode(type, props, children) {
+        if (props) {
+            var klass = props.class; props.style;
+            if (klass && !isString(klass)) {
+                props.class = normalizeClass(klass);
+            }
+        }
+        // string则对应ELEMENT
+        // 用于按位或运算
+        var shapeFlag = isString(type)
+            ? 1 /* ShapeFlags.ELEMENT */
+            : isObject(type) //是对象的话就认为它是一个有状态的组件
+                ? 4 /* ShapeFlags.STATEFUL_COMPONENT */
+                : 0;
+        return createBaseVNode(type, props, children, shapeFlag);
+    }
+    function createBaseVNode(type, props, children, shapeFlag) {
+        var vnode = {
+            __v_isVNode: true,
+            type: type,
+            props: props,
+            children: children,
+            shapeFlag: shapeFlag
+        };
+        // 解析children
+        normalizeChildren(vnode, children);
+        return vnode;
+    }
+    function normalizeChildren(vnode, children) {
+        var type = 0;
+        // 根据状态解析children
+        if (children == null) {
+            children = null;
+        }
+        else if (isArray(children)) {
+            type = 16 /* ShapeFlags.ARRAY_CHILDREN */;
+        }
+        else if (typeof children === 'object') ;
+        else if (isFunction(children)) ;
+        else {
+            children = String(children);
+            type = 8 /* ShapeFlags.TEXT_CHILDREN */;
+        }
+        vnode.children = children;
+        // 按位或运算 转成32位二进制再执行
+        // 1 ^ 8 都转成二进制 相同为0 不同为1 然后再转成10进制等于9
+        // & 与运算 两个都为1为1  有一个不为1则0
+        vnode.shapeFlag = vnode.shapeFlag | type;
+    }
+    function isVNode(value) {
+        return value ? value.__v_isVNode === true : false;
+    }
+
+    function h(type, propsOrChildren, children) {
+        var l = arguments.length;
+        if (l === 2) {
+            // 第二个参数是对象且不是数组
+            if (isObject(propsOrChildren) && !isArray(propsOrChildren)) {
+                // 如果是VNode 则当作children来用
+                if (isVNode(propsOrChildren)) {
+                    return createVNode(type, null, [propsOrChildren]);
+                }
+                return createVNode(type, propsOrChildren, []);
+            }
+            else {
+                return createVNode(type, null, propsOrChildren);
+            }
+        }
+        else {
+            if (l > 3) {
+                children = Array.prototype.slice.call(arguments, 2);
+            }
+            else if (l === 3 && isVNode(children)) {
+                children = [children];
+            }
+            return createVNode(type, propsOrChildren, children);
+        }
+    }
+
+    exports.Comment = Comment;
+    exports.Fragment = Fragment;
+    exports.Text = Text;
     exports.computed = computed;
     exports.effect = effect;
+    exports.h = h;
     exports.queuePreFlushCb = queuePreFlushCb;
     exports.reactive = reactive;
     exports.ref = ref;
