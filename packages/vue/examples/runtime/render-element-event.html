@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 事件测试
+      const { h, render } = Vue
+
+      const vnode = h(
+        'button',
+        {
+          onClick() {
+            alert('点击')
+          }
+        },
+        'click'
+      )
+
+      render(vnode, document.querySelector('#app'))
+
+      setTimeout(() => {
+        const vnode2 = h(
+          'button',
+          {
+            onDblclick() {
+              alert('双击')
+            }
+          },
+          '双click'
+        )
+        render(vnode2, document.querySelector('#app'))
+      },3000)
+    </script>
+  </body>
+</html>
