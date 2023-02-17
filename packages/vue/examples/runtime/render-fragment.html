@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // fragment挂载
+      const { h, Fragment, render } = Vue
+      const VNode = h(Fragment, { class: 'test' }, 'xxasdasdasxx')
+      render(VNode, document.querySelector('#app'))
+      setTimeout(() => {
+        const VNode2 = h(Fragment, { class: 'test' }, '哈哈哈')
+        render(VNode2, document.querySelector('#app'))
+      }, 2000)
+      console.log(VNode)
+    </script>
+  </body>
+</html>

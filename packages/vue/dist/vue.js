@@ -506,6 +506,20 @@ var Vue = (function (exports) {
         }
     }
 
+    // 本质上是创建VNode的过程
+    function normalizeVNode(child) {
+        // child已经是对象旧说明当前child已经是VNode了
+        if (typeof child === 'object') {
+            return cloneIfMounted(child);
+        }
+        else {
+            return createVNode(Text, null, String(child));
+        }
+    }
+    function cloneIfMounted(child) {
+        return child;
+    }
+
     function createRenderer(options) {
         return baseCreateRenderer(options);
     }
@@ -513,7 +527,7 @@ var Vue = (function (exports) {
      * 生成渲染器主函数 根据不同宿主环境
      */
     function baseCreateRenderer(options) {
-        var hostCreateElement = options.createElement, hostSetElementText = options.setElementText, hostInsert = options.insert, hostPatchProp = options.patchProp, hostRemove = options.remove;
+        var hostCreateElement = options.createElement, hostSetElementText = options.setElementText, hostInsert = options.insert, hostPatchProp = options.patchProp, hostRemove = options.remove, hostCreateText = options.createText, hostSetText = options.setText, hostCreateComment = options.createComment;
         var processElement = function (oldVNode, newVNode, container, anchor) {
             if (oldVNode === null) {
                 // 挂载
@@ -522,6 +536,39 @@ var Vue = (function (exports) {
             else {
                 // TODO 更新
                 patchElement(oldVNode, newVNode);
+            }
+        };
+        var processText = function (oldVNode, newVNode, container, anchor) {
+            if (oldVNode == null) {
+                // 挂载
+                newVNode.el = hostCreateText(newVNode.children);
+                hostInsert(newVNode.el, container, anchor);
+            }
+            else {
+                // 更新
+                var el = (newVNode.el = oldVNode.el);
+                if (newVNode.children !== oldVNode.children) {
+                    hostSetText(el, newVNode.children);
+                }
+            }
+        };
+        var processComment = function (oldVNode, newVNode, container, anchor) {
+            if (oldVNode == null) {
+                // 挂载
+                newVNode.el = hostCreateComment(newVNode.children);
+                hostInsert(newVNode.el, container, anchor);
+            }
+            else {
+                newVNode.el = oldVNode.el;
+            }
+        };
+        var processFragment = function (oldVNode, newVNode, container, anchor) {
+            if (oldVNode == null) {
+                // 挂载
+                mountChildren(newVNode.children, container, anchor);
+            }
+            else {
+                patchChildren(oldVNode, newVNode, container);
             }
         };
         var mountElement = function (vnode, container, anchor) {
@@ -550,6 +597,15 @@ var Vue = (function (exports) {
             patchChildren(oldVNode, newVNode, el);
             // 更新props
             patchProps(el, newVNode, oldProps, newProps);
+        };
+        var mountChildren = function (children, container, anchor) {
+            if (isString(children)) {
+                children = children.split('');
+            }
+            for (var i = 0; i < children.length; i++) {
+                var child = (children[i] = normalizeVNode(children[i]));
+                patch(null, child, container, anchor);
+            }
         };
         var patchChildren = function (oldVNode, newVNode, container, anchor) {
             var c1 = oldVNode && oldVNode.children;
@@ -602,6 +658,7 @@ var Vue = (function (exports) {
             if (oldVNode === newVNode) {
                 return;
             }
+            // 旧节点存在且新节点不是相同类型直接卸载旧节点 走挂载新节点逻辑
             if (oldVNode && !isSameVNodeType(oldVNode, newVNode)) {
                 unmount(oldVNode);
                 oldVNode = null;
@@ -609,10 +666,13 @@ var Vue = (function (exports) {
             var type = newVNode.type, shapeFlag = newVNode.shapeFlag;
             switch (type) {
                 case Text:
+                    processText(oldVNode, newVNode, container, anchor);
                     break;
                 case Comment:
+                    processComment(oldVNode, newVNode, container, anchor);
                     break;
                 case Fragment:
+                    processFragment(oldVNode, newVNode, container, anchor);
                     break;
                 default:
                     // 分两种 Element 和 组件
@@ -626,7 +686,7 @@ var Vue = (function (exports) {
         };
         var render = function (vnode, container) {
             if (vnode === null) {
-                // TODO 卸载
+                // 卸载
                 if (container._vnode) {
                     unmount(container._vnode);
                 }
@@ -658,7 +718,10 @@ var Vue = (function (exports) {
             if (parent) {
                 parent.removeChild(child);
             }
-        }
+        },
+        createText: function (text) { return doc.createTextNode(text); },
+        setText: function (node, text) { return (node.nodeValue = text); },
+        createComment: function (text) { return doc.createComment(text); }
     };
 
     function patchAttr(el, key, value) {
