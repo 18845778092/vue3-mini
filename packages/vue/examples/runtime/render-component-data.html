@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 有状态组件基础挂载
+      const { h, render } = Vue
+      const component = {
+        data() {
+          return {
+            msg: 'hello xixi'
+          }
+        },
+        render() {
+          return h('div', this.msg)
+        }
+      }
+      const vnode = h(component)
+      render(vnode, document.querySelector('#app'))
+      console.log(vnode)
+    </script>
+  </body>
+</html>

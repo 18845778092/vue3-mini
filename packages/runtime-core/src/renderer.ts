@@ -1,5 +1,8 @@
 import { EMPTY_OBJ, isString, ShapeFlags } from '@vue/shared'
-import { normalizeVNode } from './componentRenderUtils'
+import { effect, ReactiveEffect } from 'packages/reactivity/src/effect'
+import { createComponentInstance, setupComponent } from './component'
+import { normalizeVNode, renderComponentRoot } from './componentRenderUtils'
+import { queuePreFlushCb } from './scheduler'
 import { Text, Fragment, Comment, isSameVNodeType } from './vnode'
 export interface RendererOptions {
   // 为指定element的props打补丁
@@ -77,6 +80,46 @@ function baseCreateRenderer(options: RendererOptions): any {
     }
   }
 
+  const processComponent = (oldVNode, newVNode, container, anchor) => {
+    if (oldVNode == null) {
+      mountComponent(newVNode, container, anchor)
+    }
+  }
+
+  const mountComponent = (initialVNode, container, anchor) => {
+    initialVNode.component = createComponentInstance(initialVNode)
+    const instance = initialVNode.component
+
+    setupComponent(instance) //绑定render函数 处理data为响应式
+    setupRenderEffect(instance, initialVNode, container, anchor) //渲染组件
+  }
+  // 渲染组件
+  const setupRenderEffect = (instance, initialVNode, container, anchor) => {
+    const componentUpdateFn = () => {
+      // 挂载subTree
+      if (!instance.isMounted) {
+        const { bm, m } = instance
+        if (bm) {
+          bm()
+        }
+        // 根据组件定义的render 生成subTree subTree是一个VNode
+        const subTree = (instance.subTree = renderComponentRoot(instance))
+        patch(null, subTree, container, anchor)
+        if (m) {
+          m()
+        }
+        initialVNode.el = subTree.el
+      } else {
+      }
+    }
+
+    const effect = (instance.effect = new ReactiveEffect(
+      componentUpdateFn,
+      () => queuePreFlushCb(update)
+    ))
+    const update = (instance.update = () => effect.run())
+    update()
+  }
   const mountElement = (vnode, container, anchor) => {
     const { type, props, shapeFlag } = vnode
     // 1.创建element
@@ -194,6 +237,7 @@ function baseCreateRenderer(options: RendererOptions): any {
     }
 
     const { type, shapeFlag } = newVNode
+    console.log('shapeFlag和type', shapeFlag, type)
     switch (type) {
       case Text:
         processText(oldVNode, newVNode, container, anchor)
@@ -209,6 +253,7 @@ function baseCreateRenderer(options: RendererOptions): any {
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(oldVNode, newVNode, container, anchor)
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          processComponent(oldVNode, newVNode, container, anchor)
         }
     }
   }

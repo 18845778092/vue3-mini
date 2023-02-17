@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 无状态组件更新
+      const { h, render } = Vue
+      const component={
+        render(){
+          return h('div','我是组件哈哈')
+        }
+      }
+      const vnode=h(component)
+      render(vnode, document.querySelector('#app'))
+      
+      setTimeout(()=>{
+        const component2={
+        render(){
+          return h('div','更新啦')
+        }
+      }
+      const vnode2=h(component2)
+      render(vnode2, document.querySelector('#app'))
+      })
+    </script>
+  </body>
+</html>

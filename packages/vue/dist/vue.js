@@ -506,6 +506,88 @@ var Vue = (function (exports) {
         }
     }
 
+    // bm beforeMount instance
+    function injectHook(type, hook, target) {
+        if (target) {
+            target[type] = hook;
+            return hook;
+        }
+    }
+    var createHook = function (lifecycle) {
+        return function (hook, target) { return injectHook(lifecycle, hook, target); };
+    };
+    var onBeforeMount = createHook("bm" /* LifecycleHooks.BEFORE_MOUNT */);
+    var onMounted = createHook("m" /* LifecycleHooks.MOUNTED */);
+
+    var uid = 0;
+    function createComponentInstance(vnode) {
+        var type = vnode.type;
+        var instance = {
+            uid: uid++,
+            vnode: vnode,
+            type: type,
+            subTree: null,
+            effect: null,
+            update: null,
+            render: null,
+            isMounted: false,
+            bc: null,
+            c: null,
+            bm: null,
+            m: null
+        };
+        return instance;
+    }
+    function setupComponent(instance) {
+        setupStatefulComponent(instance);
+    }
+    function setupStatefulComponent(instance) {
+        finishComponentSetup(instance);
+    }
+    function finishComponentSetup(instance) {
+        //得到的是这个对象==>const component={render(){return h('div','hello')}}
+        var Component = instance.type;
+        instance.render = Component.render;
+        applyOptions(instance);
+    }
+    function applyOptions(instance) {
+        var _a = instance.type, dataOptions = _a.data, beforeCreate = _a.beforeCreate, created = _a.created, beforeMount = _a.beforeMount, mounted = _a.mounted;
+        if (beforeCreate) {
+            callHook(beforeCreate, instance.data);
+        }
+        if (dataOptions) {
+            var data = dataOptions();
+            if (isObject(data)) {
+                instance.data = reactive(data);
+            }
+        }
+        if (created) {
+            callHook(created, instance.data);
+        }
+        function registerLifecycleHook(register, hook) {
+            register(hook === null || hook === void 0 ? void 0 : hook.bind(instance.data), instance);
+        }
+        // 挂载前后调用,所以要先注入
+        registerLifecycleHook(onBeforeMount, beforeMount);
+        registerLifecycleHook(onMounted, mounted);
+    }
+    function callHook(hook, proxy) {
+        hook.bind(proxy);
+    }
+
+    function renderComponentRoot(instance) {
+        var vnode = instance.vnode, render = instance.render, data = instance.data;
+        var result;
+        try {
+            if (vnode.shapeFlag & 4 /* ShapeFlags.STATEFUL_COMPONENT */) {
+                result = normalizeVNode(render.call(data)); //我们定义的组件render函数返回vnode
+            }
+        }
+        catch (e) {
+            console.error(e);
+        }
+        return result;
+    }
     // 本质上是创建VNode的过程
     function normalizeVNode(child) {
         // child已经是对象旧说明当前child已经是VNode了
@@ -570,6 +652,39 @@ var Vue = (function (exports) {
             else {
                 patchChildren(oldVNode, newVNode, container);
             }
+        };
+        var processComponent = function (oldVNode, newVNode, container, anchor) {
+            if (oldVNode == null) {
+                mountComponent(newVNode, container, anchor);
+            }
+        };
+        var mountComponent = function (initialVNode, container, anchor) {
+            initialVNode.component = createComponentInstance(initialVNode);
+            var instance = initialVNode.component;
+            setupComponent(instance); //绑定render函数 处理data为响应式
+            setupRenderEffect(instance, initialVNode, container, anchor); //渲染组件
+        };
+        // 渲染组件
+        var setupRenderEffect = function (instance, initialVNode, container, anchor) {
+            var componentUpdateFn = function () {
+                // 挂载subTree
+                if (!instance.isMounted) {
+                    var bm = instance.bm, m = instance.m;
+                    if (bm) {
+                        bm();
+                    }
+                    // 根据组件定义的render 生成subTree subTree是一个VNode
+                    var subTree = (instance.subTree = renderComponentRoot(instance));
+                    patch(null, subTree, container, anchor);
+                    if (m) {
+                        m();
+                    }
+                    initialVNode.el = subTree.el;
+                }
+            };
+            var effect = (instance.effect = new ReactiveEffect(componentUpdateFn, function () { return queuePreFlushCb(update); }));
+            var update = (instance.update = function () { return effect.run(); });
+            update();
         };
         var mountElement = function (vnode, container, anchor) {
             var type = vnode.type, props = vnode.props, shapeFlag = vnode.shapeFlag;
@@ -664,6 +779,7 @@ var Vue = (function (exports) {
                 oldVNode = null;
             }
             var type = newVNode.type, shapeFlag = newVNode.shapeFlag;
+            console.log('shapeFlag和type', shapeFlag, type);
             switch (type) {
                 case Text:
                     processText(oldVNode, newVNode, container, anchor);
@@ -678,6 +794,9 @@ var Vue = (function (exports) {
                     // 分两种 Element 和 组件
                     if (shapeFlag & 1 /* ShapeFlags.ELEMENT */) {
                         processElement(oldVNode, newVNode, container, anchor);
+                    }
+                    else if (shapeFlag & 6 /* ShapeFlags.COMPONENT */) {
+                        processComponent(oldVNode, newVNode, container, anchor);
                     }
             }
         };
