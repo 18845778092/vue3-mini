@@ -19,11 +19,42 @@
           }
         },
         render() {
-          return h('div', this.msg)
+          return h(
+            'div',
+            {
+              class: {
+                red: true
+              }
+            },
+            this.msg
+          )
         }
       }
       const vnode = h(component)
       render(vnode, document.querySelector('#app'))
+
+      setTimeout(() => {
+        const component2 = {
+          data() {
+            return {
+              msg: 'hello....'
+            }
+          },
+          render() {
+            return h(
+              'div',
+              {
+                class: {
+                  blue: true
+                }
+              },
+              this.msg + 1
+            )
+          }
+        }
+        const vnode2 = h(component2)
+        render(vnode2, document.querySelector('#app'))
+      }, 2000)
       console.log(vnode)
     </script>
   </body>

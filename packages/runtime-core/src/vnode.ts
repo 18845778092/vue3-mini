@@ -17,7 +17,7 @@ export interface VNode {
   props: any
   children: any
   shapeFlag: number
-  key:any
+  key: any
 }
 
 export function createVNode(type, props, children): VNode {
@@ -44,7 +44,8 @@ function createBaseVNode(type, props, children, shapeFlag) {
     type,
     props,
     children,
-    shapeFlag
+    shapeFlag,
+    key: props?.key || null
   } as VNode
 
   // 解析children
@@ -80,5 +81,6 @@ export function isVNode(value: any): value is VNode {
 }
 
 export function isSameVNodeType(n1: VNode, n2: VNode) {
+  console.log('isSameVNodeType',n1.type === n2.type && n1.key === n2.key)
   return n1.type === n2.type && n1.key === n2.key
 }

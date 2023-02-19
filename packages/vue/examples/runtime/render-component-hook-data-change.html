@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      // 组件响应式变化
+      const { h, render } = Vue
+      const component = {
+        data() {
+          return {
+            msg: 'hello xixi'
+          }
+        },
+        render() {
+          return h('div', this.msg)
+        },
+        beforeCreate() {
+          console.log('beforeCreate',this.msg)
+        },
+        created() {
+          console.log('created',this.msg)
+        },
+        mounted() {
+          console.log('mounted',this.msg)
+          setTimeout(()=>{
+            this.msg='变了'
+          },2000)
+        },
+        beforeMount() {
+          console.log('beforeMount',this.msg)
+        }
+      }
+      const vnode = h(component)
+      render(vnode, document.querySelector('#app'))
+      console.log(vnode)
+    </script>
+  </body>
+</html>

@@ -10,31 +10,21 @@
   <body>
     <div id="app"></div>
     <script>
-      // 卸载元素
-      const { h, render } = Vue
-
-      const vnode = h(
-        'div',
-        {
-          class: 'test',
-          key:1
-        },
-        'hello render'
-      )
-
+      // setup函数挂载与测试
+      const { h, render, reactive } = Vue
+      const obj = reactive({
+        name: '小李'
+      })
+      const component = {
+        setup() {
+          setTimeout(() => {
+            obj.name = 'xxx'
+          }, 3000)
+          return () => h('div', obj.name)
+        }
+      }
+      const vnode = h(component)
       render(vnode, document.querySelector('#app'))
-
-      setTimeout(() => {
-        const vnode2 = h(
-        'div',
-        {
-          class: 'test',
-          key:1
-        },
-        '666'
-      )
-        render(vnode2, document.querySelector('#app'))
-      }, 2000)
     </script>
   </body>
 </html>

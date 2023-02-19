@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../../dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      const { h, render } = Vue
+      // ------------------------diff1 第一个while测试 自前向后---------
+      // const vnode = h('ul', [
+      //   h('li', { key: 1 }, 'a'),
+      //   h('li', { key: 2 }, 'b'),
+      //   h('li', { key: 3 }, 'c')
+      // ])
+      // render(vnode, document.querySelector('#app'))
+      // setTimeout(() => {
+      //   const vnode2 = h('ul', [
+      //     h('li', { key: 1 }, 'a'),
+      //     h('li', { key: 2 }, 'b'),
+      //     h('li', { key: 3 }, '自前向后')
+      //   ])
+      //   render(vnode2, document.querySelector('#app'))
+      // }, 2000)
+
+       //---------------------diff2 第二个while测试 自后向前----------------
+      // const vnode = h('ul', [
+      //   h('li', { key: 1 }, 'a'),
+      //   h('li', { key: 2 }, 'b'),
+      //   h('li', { key: 3 }, 'c')
+      // ])
+      // render(vnode, document.querySelector('#app'))
+      // setTimeout(() => {
+      //   const vnode2 = h('ul', [
+      //     h('li', { key: 4 }, 'a'),
+      //     h('li', { key: 2 }, 'b'),
+      //     h('li', { key: 3 }, '自后向前')
+      //   ])
+      //   render(vnode2, document.querySelector('#app'))
+      // }, 2000)
+
+      // --------------------diff3 新节点多余旧节点 挂载新节点-------------
+      // 新节点在后面新增
+      // const vnode = h('ul', [
+      //   h('li', { key: 1 }, 'a'),
+      //   h('li', { key: 2 }, 'b'),
+      // ])
+      // render(vnode, document.querySelector('#app'))
+      // setTimeout(() => {
+      //   const vnode2 = h('ul', [
+      //     h('li', { key: 1 }, 'a'),
+      //     h('li', { key: 2 }, 'b'),
+      //     h('li', { key: 3 }, '新节点多余旧节点,在后面新增')
+      //   ])
+      //   render(vnode2, document.querySelector('#app'))
+      // }, 2000)
+
+      // // 新节点在前面新增
+      // const vnode = h('ul', [
+      //   h('li', { key: 1 }, 'a'),
+      //   h('li', { key: 2 }, 'b'),
+      // ])
+      // render(vnode, document.querySelector('#app'))
+      // setTimeout(() => {
+      //   const vnode2 = h('ul', [
+      //     h('li', { key: 3 }, '新节点在前面新增'),
+      //     h('li', { key: 1 }, 'a'),
+      //     h('li', { key: 2 }, 'b')
+      //   ])
+      //   render(vnode2, document.querySelector('#app'))
+      // }, 2000)
+
+      // --------------------diff4 新节点少余旧节点 卸载旧节点-------------
+      // 也分 在前面多 和 在后面多  都是一样的道理
+      // const vnode = h('ul', [
+      //   h('li', { key: 1 }, 'a'),
+      //   h('li', { key: 2 }, 'b'),
+      //   h('li', { key: 3 }, 'c')
+      // ])
+      // render(vnode, document.querySelector('#app'))
+      // setTimeout(() => {
+      //   const vnode2 = h('ul', [
+      //     h('li', { key: 1 }, 'a'),
+      //     h('li', { key: 2 }, 'b')
+      //   ])
+      //   render(vnode2, document.querySelector('#app'))
+      // }, 2000)
+
+      // ----------------------diff5 乱序----------------------------------
+      const vnode = h('ul', [
+        h('li', { key: 1 }, 'a'),
+        h('li', { key: 2 }, 'b'),
+        h('li', { key: 3 }, 'c'),
+        h('li', { key: 4 }, 'd'),
+        h('li', { key: 5 }, 'e')
+      ])
+      render(vnode, document.querySelector('#app'))
+      setTimeout(() => {
+        const vnode2 = h('ul', [
+          h('li', { key: 1 }, 'new-a'),
+          h('li', { key: 3 }, 'new-c'),
+          h('li', { key: 2 }, 'new-b'),
+          h('li', { key: 6 }, 'new-f'),
+          h('li', { key: 5 }, 'new-e'),
+        ])
+        render(vnode2, document.querySelector('#app'))
+      }, 2000)
+    </script>
+  </body>
+</html>
