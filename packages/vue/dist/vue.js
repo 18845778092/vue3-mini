@@ -1258,9 +1258,309 @@ var Vue = (function (exports) {
         (_a = ensureRenderer()).render.apply(_a, __spreadArray([], __read(args), false));
     };
 
+    function createParseContext(content) {
+        // return context上下文对象
+        return {
+            source: content
+        };
+    }
+    function createRoot(children) {
+        return {
+            type: 0 /* NodeTypes.ROOT */,
+            children: children,
+            loc: {}
+        };
+    }
+    function baseParse(content) {
+        var context = createParseContext(content);
+        var children = parseChildren(context, []);
+        console.log('children', children);
+        // return javascript ast
+        return createRoot(children);
+    }
+    function parseChildren(context, ancestors) {
+        var nodes = []; //是将来ast中的children
+        while (!isEnd(context, ancestors)) {
+            var s = context.source;
+            var node = void 0;
+            if (startsWith(s, '{{')) ;
+            else if (s[0] === '<') {
+                // 标签的开始
+                if (/[a-z]/i.test(s[1])) {
+                    // 处理标签
+                    node = parseElement(context, ancestors);
+                }
+            }
+            if (!node) {
+                // 既不是模板语法也不是< 就只可能是文本节点
+                node = parseText(context);
+            }
+            pushNode(nodes, node);
+        }
+        return nodes;
+    }
+    // 返回的是AST,只不过是一层一层的AST 类似递归一样最后靠children组合在一起
+    function parseElement(context, ancestors) {
+        // 1.处理标签的开始
+        var element = parseTag(context);
+        ancestors.push(element);
+        // 2.处理标签的children
+        var children = parseChildren(context, ancestors);
+        ancestors.pop();
+        element.children = children;
+        // 3.处理标签的结束
+        // 如果是结束标签的开始的话
+        if (startsWithEndTagOpen(context.source, element.tag)) {
+            parseTag(context);
+        }
+        return element;
+    }
+    function parseTag(context, type) {
+        var match = /^<\/?([a-z][^\t\r\n\f />]*)/i.exec(context.source);
+        var tag = match[1];
+        advanceBy(context, match[0].length);
+        var isSelfClosing = startsWith(context.source, '/>');
+        advanceBy(context, isSelfClosing ? 2 : 1);
+        return {
+            tag: tag,
+            type: 1 /* NodeTypes.ELEMENT */,
+            tagType: 0 /* ElementTypes.ELEMENT */,
+            props: [],
+            children: []
+        };
+    }
+    // 解析文本
+    function parseText(context) {
+        var endTokens = ['<', '{{']; //普通文本的结束 白名单
+        var endIndex = context.source.length; //最大值
+        for (var i = 0; i < endTokens.length; i++) {
+            var index = context.source.indexOf(endTokens[i], i);
+            if (index !== -1 && endIndex > index) {
+                endIndex = index; //普通文本结束下标
+            }
+        }
+        var content = parseTextData(context, endIndex);
+        return {
+            type: 2 /* NodeTypes.TEXT */,
+            content: content
+        };
+    }
+    // 截取text文本内容
+    function parseTextData(context, length) {
+        var rawText = context.source.slice(0, length);
+        advanceBy(context, length);
+        return rawText;
+    }
+    function pushNode(nodes, node) {
+        nodes.push(node);
+    }
+    // ancestors数组 会放element node节点
+    function isEnd(context, ancestors) {
+        var s = context.source;
+        if (startsWith(s, '</')) {
+            for (var i = ancestors.length - 1; i >= 0; i--) {
+                if (startsWithEndTagOpen(s, ancestors[i].tag)) {
+                    return true;
+                }
+            }
+        }
+        return !s;
+    }
+    function startsWithEndTagOpen(source, tag) {
+        return startsWith(source, '</');
+    }
+    function startsWith(source, searchString) {
+        return source.startsWith(searchString);
+    }
+    // 右移
+    function advanceBy(context, numberOfCharacters) {
+        var source = context.source;
+        context.source = source.slice(numberOfCharacters);
+    }
+
+    function isSingleElementRoot(root, child) {
+        var children = root.children;
+        return children.length === 1 && child.type === 1 /* NodeTypes.ELEMENT */;
+    }
+
+    function createTransformContext(root, _a) {
+        var _b = _a.nodeTransforms, nodeTransforms = _b === void 0 ? [] : _b;
+        var context = {
+            nodeTransforms: nodeTransforms,
+            root: root,
+            helpers: new Map(),
+            currentNode: root,
+            parent: null,
+            childIndex: 0,
+            // helper配合helpers使用，主要往里放东西
+            helper: function (name) {
+                var count = context.helpers.get(name) || 0;
+                context.helpers.set(name, count + 1);
+                return name;
+            }
+        };
+        return context;
+    }
+    function transform(root, options) {
+        var context = createTransformContext(root, options);
+        traverseNode(root, context); //从根节点开始依次处理所有节点
+        createRootCodegen(root);
+        root.helpers = __spreadArray([], __read(context.helpers.keys()), false);
+        root.components = [];
+        root.directives = [];
+        root.imports = [];
+        root.hoists = [];
+        root.temps = [];
+        root.cached = [];
+    }
+    function traverseNode(node, context) {
+        // 深度优先 子==>父
+        // 分两个阶段:
+        // 1.进入阶段：存储所有节点的转化函数到exitFns中
+        context.currentNode = node;
+        var nodeTransforms = context.nodeTransforms;
+        var exitFns = [];
+        for (var i_1 = 0; i_1 < nodeTransforms.length; i_1++) {
+            var onExit = nodeTransforms[i_1](node, context);
+            if (onExit) {
+                exitFns.push(onExit);
+            }
+        }
+        switch (node.type) {
+            case 1 /* NodeTypes.ELEMENT */:
+            case 0 /* NodeTypes.ROOT */:
+                // 处理子节点
+                traverseChildren(node, context);
+                break;
+        }
+        // 2.退出阶段：执行exitFns中的转化函数，且是倒叙的，保证深度优先
+        context.currentNode = node;
+        var i = exitFns.length;
+        while (i--) {
+            exitFns[i]();
+        }
+    }
+    function traverseChildren(parent, context) {
+        parent.children.forEach(function (node, index) {
+            context.parent = parent;
+            context.childIndex = index;
+            traverseNode(node, context);
+        });
+    }
+    function createRootCodegen(root) {
+        var children = root.children;
+        // Vue2仅支持单个根节点
+        if (children.length === 1) {
+            var child = children[0];
+            if (isSingleElementRoot(root, child) && child.codegenNode) {
+                root.codegenNode = child.codegenNode;
+            }
+        }
+        // Vue3支持多个
+    }
+
+    var _a;
+    var CREATE_ELEMENT_VNODE = Symbol('createElementVNode');
+    var CREATE_VNODE = Symbol('createVNode');
+    (_a = {},
+        _a[CREATE_ELEMENT_VNODE] = 'createElementVNode',
+        _a[CREATE_VNODE] = 'createVNode',
+        _a);
+
+    function createVNodeCall(context, tag, props, children) {
+        if (context) {
+            context.helper(CREATE_ELEMENT_VNODE);
+        }
+        return {
+            type: 13 /* NodeTypes.VNODE_CALL */,
+            tag: tag,
+            props: props,
+            children: children
+        };
+    }
+
+    var transformElement = function (node, context) {
+        // element节点转化函数
+        return function postTransformElement() {
+            node = context.currentNode;
+            if (node.type != 1 /* NodeTypes.ELEMENT */) {
+                return;
+            }
+            var tag = node.tag;
+            var vnodeTag = "\"".concat(tag, "\"");
+            var vnodeProps = [];
+            var vnodeChildren = node.children;
+            node.codegenNode = createVNodeCall(context, vnodeTag, vnodeProps, vnodeChildren);
+        };
+    };
+
+    function isText(node) {
+        return node.type === 5 /* NodeTypes.INTERPOLATION */ || node.type === 2 /* NodeTypes.TEXT */;
+    }
+
+    // 将相邻的文本节点和表达式合并成一个表达式
+    var transformText = function (node, context) {
+        if (node.type === 0 /* NodeTypes.ROOT */ ||
+            node.type === 1 /* NodeTypes.ELEMENT */ ||
+            node.type === 11 /* NodeTypes.FOR */ ||
+            node.type === 10 /* NodeTypes.IF_BRANCH */) {
+            return function () {
+                var children = node.children;
+                var currentContainer;
+                for (var i = 0; i < children.length; i++) {
+                    var child = children[i];
+                    if (isText(child)) {
+                        // j是child的下一个子节点
+                        for (var j = i + 1; j < children.length; j++) {
+                            var next = children[j];
+                            if (!currentContainer) {
+                                // 创建符合表达式的节点
+                                currentContainer = children[i] = createCompundExpression([child], child.loc);
+                            }
+                            if (isText(next)) {
+                                // 尝试合并
+                                currentContainer.children.push("+", next); //[child,'+',next]合并
+                                children.splice(j, 1);
+                                j--;
+                            }
+                            else {
+                                // 第一个节点是text 第二个不是 不需要合并
+                                currentContainer = undefined;
+                                break;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+    };
+    function createCompundExpression(children, loc) {
+        return {
+            type: 8 /* NodeTypes.COMPOUND_EXPRESSION */,
+            loc: loc,
+            children: children
+        };
+    }
+
+    function baseCompile(template, options) {
+        if (options === void 0) { options = {}; }
+        var ast = baseParse(template);
+        transform(ast, extend(options, {
+            nodeTransforms: [transformElement, transformText]
+        }));
+        console.log(ast);
+        console.log('ast', JSON.stringify(ast));
+        return {};
+    }
+
+    function compile(template, options) {
+        return baseCompile(template, options);
+    }
+
     exports.Comment = Comment;
     exports.Fragment = Fragment;
     exports.Text = Text;
+    exports.compile = compile;
     exports.computed = computed;
     exports.effect = effect;
     exports.h = h;
