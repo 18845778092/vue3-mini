@@ -1,0 +1,59 @@
+import { hasChanged, isObject } from '../shared'
+import {
+  trackEffects,
+  trigger,
+  triggerEffects,
+  activeEffect,
+  shouldTrack
+} from './effect'
+import { reactive } from './reactive'
+
+class RefImpl {
+  private _value
+  public dep
+  public _rawValue
+  public __v_isRef = true
+  constructor(value) {
+    this._rawValue = value
+    this._value = toReactive(value)
+
+    this.dep = new Set()
+  }
+
+  get value() {
+    trackRefValue(this)
+    return this._value
+  }
+
+  set value(val) {
+    if (hasChanged(val, this._rawValue)) {
+      this._rawValue = val
+      this._value = toReactive(val)
+      triggerEffects(this.dep)
+    }
+  }
+}
+
+function trackRefValue(ref) {
+  if (activeEffect && shouldTrack) {
+    trackEffects(ref.dep)
+  }
+}
+
+function toReactive(val) {
+  return isObject(val) ? reactive(val) : val
+}
+
+function triggerRefValue() {}
+
+export function ref(raw) {
+  return new RefImpl(raw)
+}
+
+export function isRef(r) {
+  return !!(r && r.__v_isRef === true)
+}
+
+export function unRef(r) {
+  return isRef(r) ? r.value : r
+}
