@@ -4,21 +4,31 @@ import {
   shallowReadonlyHandlers
 } from './baseHandlers'
 
+export const reactiveMap = new WeakMap()
+export const readonlyMap = new WeakMap()
+export const shallowReadonlyMap = new WeakMap()
+
 export const enum ReactiveFlags {
   IS_REACTIVE = '__v_isReactive',
   IS_READONLY = '__v_isReadonly'
 }
 
 export function reactive(raw) {
-  return createReactiveObject(raw, mutableHandlers)
+  return createReactiveObject(raw, reactiveMap, mutableHandlers)
 }
 
 export function readonly(raw) {
-  return createReactiveObject(raw, readonlyHandlers)
+  return createReactiveObject(raw, readonlyMap, readonlyHandlers)
 }
 
-function createReactiveObject(target, baseHandlers) {
-  return new Proxy(target, baseHandlers)
+function createReactiveObject(target, proxyMap, baseHandlers) {
+  const existingProxy = proxyMap.get(target)
+  if (existingProxy) {
+    return existingProxy
+  }
+  const proxy = new Proxy(target, baseHandlers)
+  proxyMap.set(target, proxy)
+  return proxy
 }
 
 export function isReactive(value) {
@@ -30,7 +40,7 @@ export function isReadOnly(value) {
 }
 
 export function shallowReadonly(raw) {
-  return createReactiveObject(raw, shallowReadonlyHandlers)
+  return createReactiveObject(raw, shallowReadonlyMap, shallowReadonlyHandlers)
 }
 
 export function isProxy(val) {

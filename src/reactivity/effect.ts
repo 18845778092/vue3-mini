@@ -1,9 +1,10 @@
 import { extend } from '../shared'
+import { createDep } from './dep'
 
 const targetMap = new WeakMap()
 export let activeEffect
 export let shouldTrack
-class ReactiveEffect {
+export class ReactiveEffect {
   public deps = []
   public active = true
   public onStop?: () => void
@@ -58,7 +59,7 @@ export function track(target, key) {
 
     let dep = depsMap.get(key)
     if (!dep) {
-      dep = new Set()
+      dep = createDep()
       depsMap.set(key, dep)
     }
     trackEffects(dep)

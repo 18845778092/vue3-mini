@@ -34,17 +34,19 @@ class RefImpl {
   }
 }
 
-function trackRefValue(ref) {
+export function trackRefValue(ref) {
   if (activeEffect && shouldTrack) {
     trackEffects(ref.dep)
   }
 }
 
+export function triggerRefValue(ref) {
+  triggerEffects(ref.dep)
+}
+
 function toReactive(val) {
   return isObject(val) ? reactive(val) : val
 }
-
-function triggerRefValue() {}
 
 export function ref(raw) {
   return new RefImpl(raw)
