@@ -26,9 +26,15 @@ function mountElement(vnode, container) {
   } else if (shapeFlags & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(vnode, el)
   }
+  const isOn = key => /^on[A-Z]/.test(key)
   for (const key in props) {
     const val = props[key]
-    el.setAttribute(key, val)
+    if (isOn(key)) {
+      const event = key.slice(2).toLowerCase()
+      el.addEventListener(event, val)
+    } else {
+      el.setAttribute(key, val)
+    }
   }
   container.append(el)
 }

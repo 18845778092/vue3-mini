@@ -7,7 +7,10 @@ export const App = {
       'div',
       {
         id: 'id',
-        class: ['red', 'hard']
+        class: ['red', 'hard'],
+        onClick() {
+          console.log('click')
+        }
       },
       [h('p', { class: 'green' }, this.msg), h('p', { class: 'blue' }, 'blue')]
     )
