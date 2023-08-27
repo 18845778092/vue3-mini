@@ -1,15 +1,20 @@
 import typescript from '@rollup/plugin-typescript'
+import pkg from './package.json' assert { type: 'json' }
 export default {
   input: './src/index.ts',
   output: [
     {
       format: 'cjs',
-      file: 'lib/mini-vue.cjs.js'
+      file: pkg.main
     },
     {
       format: 'es',
-      file: 'lib/mini-vue.esm.js'
+      file: pkg.module
     }
   ],
-  plugins: [typescript()]
+  plugins: [
+    typescript({
+      module: 'NodeNext'
+    })
+  ]
 }
