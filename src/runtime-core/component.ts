@@ -1,3 +1,5 @@
+import { isObject } from '../shared'
+
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
@@ -24,7 +26,7 @@ function setupStatefulComponent(instance) {
 
 function handleSetupResult(instance, setupResult) {
   // TODO function
-  if (typeof setupResult === 'object') {
+  if (isObject(setupResult)) {
     instance.setupState = setupResult
   }
 

@@ -12,9 +12,5 @@ export default {
       file: pkg.module
     }
   ],
-  plugins: [
-    typescript({
-      module: 'NodeNext'
-    })
-  ]
+  plugins: [typescript()]
 }
