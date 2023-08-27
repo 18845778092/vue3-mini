@@ -1,4 +1,5 @@
 import { computed } from '../computed'
+import { effect } from '../effect'
 import { reactive } from '../reactive'
 
 describe('computed', () => {
@@ -31,7 +32,6 @@ describe('computed', () => {
     // // should not compute until needed
     value.foo = 2
     expect(getter).toHaveBeenCalledTimes(1)
-
     // // now it should compute
     expect(cValue.value).toBe(2)
     expect(getter).toHaveBeenCalledTimes(2)
@@ -39,5 +39,32 @@ describe('computed', () => {
     // should not compute again
     cValue.value
     expect(getter).toHaveBeenCalledTimes(2)
+  })
+
+  it('should compute', () => {
+    const value = reactive({ foo: 1 })
+    const getter = jest.fn(() => value.foo)
+    const cValue = computed(getter)
+    const fn = jest.fn(() => {
+      cValue.value
+    })
+    effect(fn)
+    // 计算一次
+    expect(getter).toHaveBeenCalledTimes(1)
+
+    expect(cValue.value).toBe(1)
+    // 缓存不计算
+    expect(getter).toHaveBeenCalledTimes(1)
+
+    value.foo = 2
+    expect(getter).toHaveBeenCalledTimes(2)
+    expect(fn).toHaveBeenCalledTimes(2)
+    // 缓存
+    cValue.value
+    expect(getter).toHaveBeenCalledTimes(2)
+    expect(fn).toHaveBeenCalledTimes(2)
+    value.foo = 3
+    expect(getter).toHaveBeenCalledTimes(3)
+    expect(fn).toHaveBeenCalledTimes(3)
   })
 })
