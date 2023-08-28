@@ -5,7 +5,6 @@ const App = {
     return {}
   },
   render() {
-    console.log('this.$slots', this.$slots)
     const foo = h('p', {}, 'foo')
     return h('div', {}, [
       renderSlots(this.$slots, 'header', {
