@@ -1,3 +1,4 @@
+import { isObject } from '../shared'
 import {
   mutableHandlers,
   readonlyHandlers,
@@ -39,8 +40,16 @@ export function isReadOnly(value) {
   return !!value[ReactiveFlags.IS_READONLY]
 }
 
-export function shallowReadonly(raw) {
-  return createReactiveObject(raw, shallowReadonlyMap, shallowReadonlyHandlers)
+export function shallowReadonly(target) {
+  if (!isObject(target)) {
+    console.warn(`target ${target} 必须是一个对象`)
+    return
+  }
+  return createReactiveObject(
+    target,
+    shallowReadonlyMap,
+    shallowReadonlyHandlers
+  )
 }
 
 export function isProxy(val) {
