@@ -3,23 +3,17 @@ import Foo from './Foo.js'
 
 export const App = {
   render() {
-    return h(
-      'div',
+    const app = h('div', {}, 'App')
+    const foo = h(
+      Foo,
+      {},
       {
-        id: 'id',
-        class: ['red', 'hard']
-      },
-      [
-        h('p', { class: 'green' }, this.msg),
-        h(Foo, {
-          class: 'foo',
-          count: 1,
-          onAddFoo(a, b) {
-            console.log('监听到了', a, b)
-          }
-        })
-      ]
+        header: ({ age }) => h('p', {}, 'header' + age),
+        default: () => h('p', {}, 'default main'),
+        footer: () => h('p', {}, 'footer')
+      }
     )
+    return h('div', {}, [app, foo])
   },
   setup() {
     return {

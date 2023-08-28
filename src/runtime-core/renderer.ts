@@ -52,7 +52,6 @@ function processComponent(vnode, container) {
 function mountComponent(initialVNode, container) {
   const instance = createComponentInstance(initialVNode)
   setupComponent(instance) // 获取render
-
   setupRenderEffect(instance, initialVNode, container) // 调用render
 }
 
