@@ -20,3 +20,5 @@ export const toHandlerKey = (str: string) => {
 }
 
 export const isOn = key => /^on[A-Z]/.test(key)
+
+export const EMPTY_OBJ = {}
