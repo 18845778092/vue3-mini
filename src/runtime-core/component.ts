@@ -10,7 +10,8 @@ let currentInstance = null
 
 export function createComponentInstance(vnode, parent) {
   const component = {
-    vnode,
+    vnode, // 更新前vnode
+    next: null, // 下一次更新的vnode
     type: vnode.type,
     setupState: {},
     props: {},
