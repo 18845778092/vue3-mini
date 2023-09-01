@@ -136,24 +136,39 @@ const PatchTest = {
     //     ])
 
     // 移动
+    // return this.flag
+    //   ? h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'C' }, 'C'),
+    //       h('div', { key: 'D' }, 'D'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+    //   : h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'C' }, 'C'),
+    //       h('div', { key: 'D' }, 'D'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+
+    // fix
     return this.flag
       ? h('div', {}, [
           h('div', { key: 'A' }, 'A'),
+          h('div', {}, 'C'),
           h('div', { key: 'B' }, 'B'),
-          h('div', { key: 'C' }, 'C'),
-          h('div', { key: 'D' }, 'D'),
-          h('div', { key: 'E' }, 'E'),
-          h('div', { key: 'F' }, 'F'),
-          h('div', { key: 'G' }, 'G')
+          h('div', { key: 'D' }, 'D')
         ])
       : h('div', {}, [
           h('div', { key: 'A' }, 'A'),
           h('div', { key: 'B' }, 'B'),
-          h('div', { key: 'E' }, 'E'),
-          h('div', { key: 'C' }, 'C'),
-          h('div', { key: 'D' }, 'D'),
-          h('div', { key: 'F' }, 'F'),
-          h('div', { key: 'G' }, 'G')
+          h('div', {}, 'C'),
+          h('div', { key: 'D' }, 'D')
         ])
   }
 }
