@@ -64,19 +64,19 @@ const PatchTest = {
     //       h('div', { key: 'E' }, 'E')
     //     ])
     // 新的比老的长 左侧新增
-    return this.flag
-      ? h('div', {}, [
-          h('div', { key: 'A' }, 'A'),
-          h('div', { key: 'B' }, 'B'),
-          h('div', { key: 'C' }, 'C')
-        ])
-      : h('div', {}, [
-          h('div', { key: 'D' }, 'D'),
-          h('div', { key: 'E' }, 'E'),
-          h('div', { key: 'A' }, 'A'),
-          h('div', { key: 'B' }, 'B'),
-          h('div', { key: 'C' }, 'C')
-        ])
+    // return this.flag
+    //   ? h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'C' }, 'C')
+    //     ])
+    //   : h('div', {}, [
+    //       h('div', { key: 'D' }, 'D'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'C' }, 'C')
+    //     ])
 
     // 新的比老的短 右侧短
     // return this.flag
@@ -95,6 +95,66 @@ const PatchTest = {
     //       h('div', { key: 'C' }, 'C')
     //     ])
     //   : h('div', {}, [h('div', { key: 'B' }, 'B'), h('div', { key: 'C' }, 'C')])
+
+    // 乱序
+    // return this.flag
+    //   ? h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'C', id: 'c-prev' }, 'C'),
+    //       h('div', { key: 'D' }, 'D'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+    //   : h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'C', id: 'c-next' }, 'C'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+    // ab(ced)fg
+    // ab(ec)fg
+    // return this.flag
+    //   ? h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'C', id: 'c-prev' }, 'C'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'D' }, 'D'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+    //   : h('div', {}, [
+    //       h('div', { key: 'A' }, 'A'),
+    //       h('div', { key: 'B' }, 'B'),
+    //       h('div', { key: 'E' }, 'E'),
+    //       h('div', { key: 'C', id: 'c-next' }, 'ccc'),
+    //       h('div', { key: 'F' }, 'F'),
+    //       h('div', { key: 'G' }, 'G')
+    //     ])
+
+    // 移动
+    return this.flag
+      ? h('div', {}, [
+          h('div', { key: 'A' }, 'A'),
+          h('div', { key: 'B' }, 'B'),
+          h('div', { key: 'C' }, 'C'),
+          h('div', { key: 'D' }, 'D'),
+          h('div', { key: 'E' }, 'E'),
+          h('div', { key: 'F' }, 'F'),
+          h('div', { key: 'G' }, 'G')
+        ])
+      : h('div', {}, [
+          h('div', { key: 'A' }, 'A'),
+          h('div', { key: 'B' }, 'B'),
+          h('div', { key: 'E' }, 'E'),
+          h('div', { key: 'C' }, 'C'),
+          h('div', { key: 'D' }, 'D'),
+          h('div', { key: 'F' }, 'F'),
+          h('div', { key: 'G' }, 'G')
+        ])
   }
 }
 export const App = {
