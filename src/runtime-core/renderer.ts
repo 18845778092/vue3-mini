@@ -4,6 +4,7 @@ import { ShapeFlags } from '../shared/shapeFlags'
 import { createComponentInstance, setupComponent } from './component'
 import { shouldUpdateComponent } from './componentUpdateUtils'
 import { createAppAPI } from './createApp'
+import { queueJobs } from './scheduler'
 import { Fragment, Text } from './vnode'
 
 export function createRender(options) {
@@ -291,27 +292,34 @@ export function createRender(options) {
   }
 
   function setupRenderEffect(instance, initialVNode, container, anchor) {
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        const { proxy } = instance
-        const subTree = (instance.subTree = instance.render.call(proxy))
-        patch(null, subTree, container, instance, anchor)
-        initialVNode.el = subTree.el
-        instance.isMounted = true
-      } else {
-        // update props
-        const { next, vnode } = instance
-        if (next) {
-          next.el = vnode.el
-          updateComponentPerRender(instance, next)
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          const { proxy } = instance
+          const subTree = (instance.subTree = instance.render.call(proxy))
+          patch(null, subTree, container, instance, anchor)
+          initialVNode.el = subTree.el
+          instance.isMounted = true
+        } else {
+          // update props
+          const { next, vnode } = instance
+          if (next) {
+            next.el = vnode.el
+            updateComponentPerRender(instance, next)
+          }
+          const { proxy } = instance
+          const prevSubTree = instance.subTree
+          const nextTree = instance.render.call(proxy)
+          instance.subTree = nextTree
+          patch(prevSubTree, nextTree, container, instance, anchor)
         }
-        const { proxy } = instance
-        const prevSubTree = instance.subTree
-        const nextTree = instance.render.call(proxy)
-        instance.subTree = nextTree
-        patch(prevSubTree, nextTree, container, instance, anchor)
+      },
+      {
+        scheduler() {
+          queueJobs(instance.update)
+        }
       }
-    })
+    )
   }
 
   function render(vnode, container, parentComponent) {
