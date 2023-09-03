@@ -1,4 +1,4 @@
 {
   "editor.formatOnSave": true,
-  "cSpell.words": ["vnode"]
+  "cSpell.words": ["codegen", "vnode"]
 }
