@@ -2,6 +2,8 @@ export const extend = Object.assign
 
 export const isObject = val => val !== null && typeof val === 'object'
 
+export const isString = val => typeof val === 'string'
+
 export const hasChanged = (oldVal, newVal) => !Object.is(oldVal, newVal)
 
 export const hasOwn = (val, key) =>
