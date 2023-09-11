@@ -1,0 +1,10 @@
+export { h } from './h'
+export { createTextVNode, createElementVNode } from './vnode'
+export { renderSlots } from './helpers/renderSlots'
+export { getCurrentInstance, registerRuntimeCompiler } from './component'
+export { provide, inject } from './apiInject'
+export { createRender } from './renderer'
+export { nextTick } from './scheduler'
+export { toDisplayString } from '@strive-mini-vue/shared'
+
+export * from '@strive-mini-vue/reactivity'

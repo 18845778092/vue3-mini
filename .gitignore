@@ -8,3 +8,5 @@ TODOs.md
 *.log
 .idea
 lib
+pnpm-lock.yaml
+
