@@ -26,12 +26,10 @@ export function generate(ast) {
 
 function genFunctionPreamble(ast, context) {
   const { push } = context
-  const VueBinging = 'Vue'
+  const VueBinging = 'vue'
   const aliasHelper = s => `${helperMapName[s]}: _${helperMapName[s]}`
   if (ast.helpers.length) {
-    push(
-      `const { ${ast.helpers.map(aliasHelper).join(', ')} } = "${VueBinging}"`
-    )
+    push(`const { ${ast.helpers.map(aliasHelper).join(', ')} } = ${VueBinging}`)
   }
   push('\n')
   push('return ')
