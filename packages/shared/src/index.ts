@@ -1,10 +1,6 @@
 export * from './toDisplayString'
 
-<<<<<<< Updated upstream:src/shared/index.ts
-=======
 export { ShapeFlags } from './shapeFlags'
-
->>>>>>> Stashed changes:packages/shared/src/index.ts
 export const extend = Object.assign
 
 export const isObject = val => val !== null && typeof val === 'object'
