@@ -1,6 +1,7 @@
 import { computed } from '../src/computed'
 import { effect } from '../src/effect'
 import { reactive } from '../src/reactive'
+import { vi } from 'vitest'
 
 describe('computed', () => {
   it('happy path', () => {
@@ -16,7 +17,7 @@ describe('computed', () => {
 
   it('should compute lazily', () => {
     const value = reactive({ foo: 1 })
-    const getter = jest.fn(() => value.foo)
+    const getter = vi.fn(() => value.foo)
     const cValue = computed(getter)
 
     // lazy
@@ -43,9 +44,9 @@ describe('computed', () => {
 
   it('should compute', () => {
     const value = reactive({ foo: 1 })
-    const getter = jest.fn(() => value.foo)
+    const getter = vi.fn(() => value.foo)
     const cValue = computed(getter)
-    const fn = jest.fn(() => {
+    const fn = vi.fn(() => {
       cValue.value
     })
     effect(fn)
