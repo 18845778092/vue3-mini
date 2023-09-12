@@ -7,3 +7,12 @@
 - Reactivity响应式
 ## TDD开发
 基于Jest，测试驱动开发思想
+## 运行方式
+- dev模式
+````
+pnpm run dev
+````
+- build模式
+````
+pnpm run build
+````
