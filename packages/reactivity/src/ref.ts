@@ -8,12 +8,12 @@ import {
 import { reactive } from './reactive'
 import { Dep, createDep } from './dep'
 
-class RefImpl {
-  private _value
-  public dep
-  public _rawValue
-  public __v_isRef = true
-  constructor(value) {
+class RefImpl<T> {
+  private _value: T
+  private _rawValue: T
+  public dep?: Dep = undefined
+  public readonly __v_isRef = true
+  constructor(value: T) {
     this._rawValue = value
     this._value = toReactive(value)
 
@@ -25,11 +25,11 @@ class RefImpl {
     return this._value
   }
 
-  set value(val) {
-    if (hasChanged(val, this._rawValue)) {
-      this._rawValue = val
-      this._value = toReactive(val)
-      triggerEffects(this.dep)
+  set value(newVal) {
+    if (hasChanged(newVal, this._rawValue)) {
+      this._rawValue = newVal
+      this._value = toReactive(newVal)
+      triggerRefValue(this)
     }
   }
 }
