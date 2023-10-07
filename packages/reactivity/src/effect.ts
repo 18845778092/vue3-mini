@@ -1,6 +1,16 @@
 import { extend } from '@strive-mini-vue/shared'
 import { createDep } from './dep'
-
+export interface DebuggerOptions {}
+export type EffectScheduler = (...args: any[]) => any
+export interface ReactiveEffectOptions extends DebuggerOptions {
+  lazy?: boolean
+  scheduler?: EffectScheduler //triggerEffect中优先于run触发
+  onStop?: () => void
+}
+export interface ReactiveEffectRunner<T = any> {
+  (): T
+  effect: ReactiveEffect
+}
 const targetMap = new WeakMap()
 export let activeEffect
 export let shouldTrack
@@ -40,11 +50,15 @@ function cleanupEffect(effect) {
   effect.deps.length = 0
 }
 
-export function effect(fn, options: any = {}) {
-  const _effect = new ReactiveEffect(fn, options.scheduler)
-  extend(_effect, options)
-  _effect.run()
-  const runner: any = _effect.run.bind(_effect)
+export function effect(fn, options?: ReactiveEffectOptions) {
+  const _effect = new ReactiveEffect(fn)
+  if (options) {
+    extend(_effect, options)
+  }
+  if (!options || !options.lazy) {
+    _effect.run()
+  }
+  const runner = _effect.run.bind(_effect) as ReactiveEffectRunner
   runner.effect = _effect
   return runner
 }
