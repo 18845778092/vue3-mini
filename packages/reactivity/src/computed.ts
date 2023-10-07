@@ -1,15 +1,17 @@
-import { createDep } from './dep'
+import { Dep, createDep } from './dep'
 import { ReactiveEffect } from './effect'
 import { trackRefValue, triggerRefValue } from './ref'
 
-class computedRefImpl {
-  private dep
-  private _dirty = true
-  private _value
-  public _effect
+export type ComputedGetter<T> = (...args: any[]) => T
 
-  constructor(getter) {
-    this.dep = createDep()
+export class ComputedRefImpl<T> {
+  public dep?: Dep = undefined
+  private _value!: T
+  public _dirty = true
+  public readonly _effect: ReactiveEffect<T>
+
+  constructor(getter: ComputedGetter<T>) {
+    // this.dep = createDep()
     this._effect = new ReactiveEffect(getter, () => {
       if (!this._dirty) {
         this._dirty = true
@@ -29,5 +31,5 @@ class computedRefImpl {
 }
 
 export function computed(getter) {
-  return new computedRefImpl(getter)
+  return new ComputedRefImpl(getter)
 }

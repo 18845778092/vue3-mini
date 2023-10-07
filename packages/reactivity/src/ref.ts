@@ -6,6 +6,7 @@ import {
   shouldTrack
 } from './effect'
 import { reactive } from './reactive'
+import { Dep, createDep } from './dep'
 
 class RefImpl {
   private _value
@@ -32,15 +33,20 @@ class RefImpl {
     }
   }
 }
-
-export function trackRefValue(ref) {
-  if (activeEffect && shouldTrack) {
-    trackEffects(ref.dep)
+type RefBase<T> = {
+  dep?: Dep
+  value: T
+}
+export function trackRefValue(ref: RefBase<any>) {
+  if (shouldTrack && activeEffect) {
+    trackEffects(ref.dep || (ref.dep = createDep()))
   }
 }
 
-export function triggerRefValue(ref) {
-  triggerEffects(ref.dep)
+export function triggerRefValue(ref: RefBase<any>) {
+  if (ref.dep) {
+    triggerEffects(ref.dep)
+  }
 }
 
 function toReactive(val) {

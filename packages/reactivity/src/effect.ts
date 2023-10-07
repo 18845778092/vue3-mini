@@ -1,5 +1,6 @@
-import { extend } from '@strive-mini-vue/shared'
-import { createDep } from './dep'
+import { extend, isArray } from '@strive-mini-vue/shared'
+import { Dep, createDep } from './dep'
+import { ComputedRefImpl } from './computed'
 export interface DebuggerOptions {}
 export type EffectScheduler = (...args: any[]) => any
 export interface ReactiveEffectOptions extends DebuggerOptions {
@@ -11,14 +12,20 @@ export interface ReactiveEffectRunner<T = any> {
   (): T
   effect: ReactiveEffect
 }
-const targetMap = new WeakMap()
+type KeyToDepMap = Map<any, Dep>
+const targetMap = new WeakMap<any, KeyToDepMap>()
+
 export let activeEffect
 export let shouldTrack
-export class ReactiveEffect {
-  public deps = []
-  public active = true
-  public onStop?: () => void
-  constructor(public fn, public scheduler?) {
+export class ReactiveEffect<T = any> {
+  deps: Dep[] = []
+  active = true
+  computed?: ComputedRefImpl<T>
+  onStop?: () => void
+  constructor(
+    public fn: () => T,
+    public scheduler: EffectScheduler | null = null
+  ) {
     this.fn = fn
   }
   run() {
@@ -63,7 +70,7 @@ export function effect(fn, options?: ReactiveEffectOptions) {
   return runner
 }
 
-export function track(target, key) {
+export function track(target: object, key: unknown) {
   if (activeEffect && shouldTrack) {
     let depsMap = targetMap.get(target)
     if (!depsMap) {
@@ -80,25 +87,41 @@ export function track(target, key) {
   }
 }
 
-export function trackEffects(dep) {
+export function trackEffects(dep: Dep) {
   if (dep.has(activeEffect)) return
   dep.add(activeEffect)
   activeEffect.deps.push(dep)
 }
 
-export function trigger(target, key) {
+export function trigger(target: object, key?: unknown) {
   let depsMap = targetMap.get(target)
+  if (!depsMap) {
+    return
+  }
   let dep = depsMap.get(key)
-  triggerEffects(dep)
+  triggerEffects(dep!)
 }
 
-export function triggerEffects(dep) {
-  for (const effect of dep) {
-    if (effect.scheduler) {
-      effect.scheduler()
-    } else {
-      effect.run()
+export function triggerEffects(dep: Dep | ReactiveEffect[]) {
+  const effects = isArray(dep) ? dep : [...dep]
+  for (const effect of effects) {
+    if (effect.computed) {
+      triggerEffect(effect)
     }
+  }
+
+  for (const effect of effects) {
+    if (!effect.computed) {
+      triggerEffect(effect)
+    }
+  }
+}
+
+function triggerEffect(effect: ReactiveEffect) {
+  if (effect.scheduler) {
+    effect.scheduler()
+  } else {
+    effect.run()
   }
 }
 
