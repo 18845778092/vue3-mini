@@ -4,7 +4,7 @@ import { createComponentInstance, setupComponent } from './component'
 import { shouldUpdateComponent } from './componentUpdateUtils'
 import { createAppAPI } from './createApp'
 import { queueJobs } from './scheduler'
-import { Fragment, Text } from './vnode'
+import { Fragment, Text, isSameVNodeType } from './vnode'
 
 export function createRender(options) {
   const {
@@ -95,9 +95,7 @@ export function createRender(options) {
     const l2 = c2.length
     let e1 = c1.length - 1
     let e2 = l2 - 1
-    function isSameVNodeType(n1, n2) {
-      return n1.type === n2.type && n1.key === n2.key
-    }
+
     // left
     while (i <= e1 && i <= e2) {
       const n1 = c1[i]
